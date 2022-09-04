@@ -51,7 +51,7 @@ namespace MagicVilla_VillaApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
-        public ActionResult<VillaDto> CreateVilla([FromBody] VillaDto villaDto)
+        public ActionResult<VillaDto> CreateVilla([FromBody] VillaCreateDto villaDto)
         {
             if(_db.Villas.FirstOrDefault(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
             {
@@ -63,17 +63,13 @@ namespace MagicVilla_VillaApi.Controllers
             {
                 return BadRequest(villaDto);    
             }
-            if(villaDto.Id>0)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);    
-            }
+            
 
             //need to manuallt convert villadto -> villa model -- later we will use auto mapper.
             Villa model = new Villa() //converting
             {
                 Amenity = villaDto.Amenity,
                 Details = villaDto.Details,
-                Id = villaDto.Id,
                 ImageUrl = villaDto.ImageUrl,
                 Name = villaDto.Name,
                 Occupancy = villaDto.Occupancy,
@@ -86,7 +82,7 @@ namespace MagicVilla_VillaApi.Controllers
             _db.Villas.Add(model);
             _db.SaveChanges();
 
-            return CreatedAtRoute("GetVilla", new { id = villaDto.Id }, villaDto);
+            return CreatedAtRoute("GetVilla", new { id = model.Id }, model);
         }
 
         [HttpDelete] //Deleting record in db.
@@ -112,13 +108,13 @@ namespace MagicVilla_VillaApi.Controllers
         [HttpPut("{id:int}",Name ="UpdateVilla")] //Updating record in db.
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateVilla(int id , [FromBody] VillaDto villaDto)
+        public IActionResult UpdateVilla(int id , [FromBody] VillaUpdateDto villaDto)
         {
             if(villaDto == null || id != villaDto.Id)
             {
                 return BadRequest();
             }
-            var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
+            var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id);
             //villa.Name = villaDto.Name; // we have to convert if not using ef core.
             //need to manuallt convert villadto -> villa model -- later we will use auto mapper.
             Villa model = new () //converting
@@ -141,7 +137,7 @@ namespace MagicVilla_VillaApi.Controllers
         [HttpPatch("{id:int}",Name = "UpdatePartialVilla")]
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update..
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaDto> patchDTO)
+        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDto> patchDTO)
         {
             if (patchDTO == null || id == 0)
             {
@@ -150,7 +146,7 @@ namespace MagicVilla_VillaApi.Controllers
 
             var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
 
-            VillaDto villaDto = new() // since we are updating from dto to model.
+            VillaUpdateDto villaDto = new() // since we are updating from dto to model.
             {
                 Amenity = villa.Amenity,
                 Details = villa.Details,
