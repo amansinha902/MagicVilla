@@ -21,22 +21,22 @@ namespace MagicVilla_VillaApi.Controllers
         }
         [HttpGet] //getting data form db. 
         [ProducesResponseType(StatusCodes.Status200OK)] // this is response type of api
-        public ActionResult<IEnumerable<VillaDto>> GetVillas()
+        public async Task<ActionResult<IEnumerable<VillaDto>>>GetVillas()  //asyn await recommended way to use in API by microsoft.
         {
-            return Ok(_db.Villas.ToList());
+            return Ok(await _db.Villas.ToListAsync());
         }
         [HttpGet("{id:int}", Name="GetVilla")] //here we are specifing that this method accept id as parameter.
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         //[ProducesResponseType(200, Type=typeof(villadto)] -- this is alternate 
-        public ActionResult<VillaDto> GetVilla(int id)
+        public async Task <ActionResult<VillaDto>> GetVilla(int id)
         {
             if(id == 0)
             {
                 return BadRequest();
             }
-            var villa = _db.Villas.FirstOrDefault(u =>u.Id == id);
+            var villa =await _db.Villas.FirstOrDefaultAsync(u =>u.Id == id);
             if(villa == null)
             {
                 return NotFound();
@@ -51,9 +51,9 @@ namespace MagicVilla_VillaApi.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 
-        public ActionResult<VillaDto> CreateVilla([FromBody] VillaCreateDto villaDto)
+        public async Task<ActionResult<VillaDto>> CreateVilla([FromBody] VillaCreateDto villaDto)
         {
-            if(_db.Villas.FirstOrDefault(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
+            if(await _db.Villas.FirstOrDefaultAsync(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError", "Villa already exist!");
                 return BadRequest(ModelState);
@@ -79,8 +79,8 @@ namespace MagicVilla_VillaApi.Controllers
 
             //Add changes to villa model using ef core ADD METHOD.
 
-            _db.Villas.Add(model);
-            _db.SaveChanges();
+           await _db.Villas.AddAsync(model);
+           await  _db.SaveChangesAsync();
 
             return CreatedAtRoute("GetVilla", new { id = model.Id }, model);
         }
@@ -89,32 +89,32 @@ namespace MagicVilla_VillaApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in delete.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult DeleteVilla(int id ) // here using IActionResult because we are not returning anything.
+        public async Task<IActionResult> DeleteVilla(int id ) // here using IActionResult because we are not returning anything.
         {
             
             if(id == 0)
             {
                 return BadRequest();
             }
-            var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
+            var villa = await _db.Villas.FirstOrDefaultAsync(u => u.Id == id);
             if(villa == null)
             {
                 return BadRequest();
             }
-            _db.Villas.Remove(villa);
-            _db.SaveChanges();
+             _db.Villas.Remove(villa);
+           await  _db.SaveChangesAsync();
             return NoContent();
         }
         [HttpPut("{id:int}",Name ="UpdateVilla")] //Updating record in db.
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateVilla(int id , [FromBody] VillaUpdateDto villaDto)
+        public async Task<IActionResult> UpdateVilla(int id , [FromBody] VillaUpdateDto villaDto)
         {
             if(villaDto == null || id != villaDto.Id)
             {
                 return BadRequest();
             }
-            var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id);
+            var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             //villa.Name = villaDto.Name; // we have to convert if not using ef core.
             //need to manuallt convert villadto -> villa model -- later we will use auto mapper.
             Villa model = new () //converting
@@ -129,7 +129,7 @@ namespace MagicVilla_VillaApi.Controllers
                 Sqft = villaDto.Sqft
             };
             _db.Villas.Update(model);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
 
             return NoContent();
         }
@@ -137,14 +137,14 @@ namespace MagicVilla_VillaApi.Controllers
         [HttpPatch("{id:int}",Name = "UpdatePartialVilla")]
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update..
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDto> patchDTO)
+        public async Task<IActionResult> UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDto> patchDTO)
         {
             if (patchDTO == null || id == 0)
             {
                 return BadRequest();
             }
 
-            var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
+            var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
 
             VillaUpdateDto villaDto = new() // since we are updating from dto to model.
             {
@@ -175,7 +175,7 @@ namespace MagicVilla_VillaApi.Controllers
                 Sqft = villaDto.Sqft
             };
             _db.Villas.Update(model);
-            _db.SaveChanges();
+           await _db.SaveChangesAsync();
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
