@@ -1,4 +1,5 @@
-﻿using MagicVilla_VillaApi.Data;
+﻿using AutoMapper;
+using MagicVilla_VillaApi.Data;
 using MagicVilla_VillaApi.Dto;
 using MagicVilla_VillaApi.Models;
 using Microsoft.AspNetCore.Http;
@@ -14,16 +15,19 @@ namespace MagicVilla_VillaApi.Controllers
     public class VillaApiController : ControllerBase
     { 
         private readonly ApplicationDbContext _db; //Dependecy Injection field.
+        private readonly IMapper _mapper;
 
-        public VillaApiController(ApplicationDbContext db) //Constructor Injection to use DbContext.
+        public VillaApiController(ApplicationDbContext db, IMapper mapper) //Constructor Injection to use DbContext.
         {
            _db = db;
+           _mapper = mapper;
         }
         [HttpGet] //getting data form db. 
         [ProducesResponseType(StatusCodes.Status200OK)] // this is response type of api
         public async Task<ActionResult<IEnumerable<VillaDto>>>GetVillas()  //asyn await recommended way to use in API by microsoft.
         {
-            return Ok(await _db.Villas.ToListAsync());
+            IEnumerable<Villa> villaList = await _db.Villas.ToListAsync();
+            return Ok(_mapper.Map<List<VillaDto>>(villaList));
         }
         [HttpGet("{id:int}", Name="GetVilla")] //here we are specifing that this method accept id as parameter.
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -42,7 +46,7 @@ namespace MagicVilla_VillaApi.Controllers
                 return NotFound();
             }
 
-            return Ok(villa); //we are returning ok as response with villa object.
+            return Ok(_mapper.Map<VillaDto>(villa)); //we are returning ok as response with villa object.
 
         }
 
@@ -65,17 +69,18 @@ namespace MagicVilla_VillaApi.Controllers
             }
             
 
-            //need to manuallt convert villadto -> villa model -- later we will use auto mapper.
-            Villa model = new Villa() //converting
-            {
-                Amenity = villaDto.Amenity,
-                Details = villaDto.Details,
-                ImageUrl = villaDto.ImageUrl,
-                Name = villaDto.Name,
-                Occupancy = villaDto.Occupancy,
-                Rate = villaDto.Rate,
-                Sqft = villaDto.Sqft
-            };
+            //need to manuallt convert villadto -> villa model 
+            Villa model = _mapper.Map<Villa>(villaDto); // using auto mapper we lot of time as we dont need to map values manually.
+            //Villa model = new Villa() //converting conventional way.
+            //{
+            //    Amenity = villaDto.Amenity,
+            //    Details = villaDto.Details,
+            //    ImageUrl = villaDto.ImageUrl,
+            //    Name = villaDto.Name,
+            //    Occupancy = villaDto.Occupancy,
+            //    Rate = villaDto.Rate,
+            //    Sqft = villaDto.Sqft
+            //};
 
             //Add changes to villa model using ef core ADD METHOD.
 
@@ -116,18 +121,9 @@ namespace MagicVilla_VillaApi.Controllers
             }
             var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             //villa.Name = villaDto.Name; // we have to convert if not using ef core.
-            //need to manuallt convert villadto -> villa model -- later we will use auto mapper.
-            Villa model = new () //converting
-            {
-                Amenity = villaDto.Amenity,
-                Details = villaDto.Details,
-                Id = villaDto.Id,
-                ImageUrl = villaDto.ImageUrl,
-                Name = villaDto.Name,
-                Occupancy = villaDto.Occupancy,
-                Rate = villaDto.Rate,
-                Sqft = villaDto.Sqft
-            };
+            //need to manuallt convert villadto -> villa model -- 
+            Villa model = _mapper.Map<Villa>(villaDto);
+           
             _db.Villas.Update(model);
             await _db.SaveChangesAsync();
 
@@ -145,35 +141,16 @@ namespace MagicVilla_VillaApi.Controllers
             }
 
             var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
-
-            VillaUpdateDto villaDto = new() // since we are updating from dto to model.
-            {
-                Amenity = villa.Amenity,
-                Details = villa.Details,
-                Id = villa.Id,
-                ImageUrl = villa.ImageUrl,
-                Name = villa.Name,
-                Occupancy = villa.Occupancy,
-                Rate = villa.Rate,
-                Sqft = villa.Sqft
-            };
+            VillaUpdateDto villaDto = _mapper.Map<VillaUpdateDto>(villa);
+           
 
             if(villa == null)
             {
                 return BadRequest();
             }
             patchDTO.ApplyTo(villaDto,ModelState);
-            Villa model = new() //converting back.
-            {
-                Amenity = villaDto.Amenity,
-                Details = villaDto.Details,
-                Id = villaDto.Id,
-                ImageUrl = villaDto.ImageUrl,
-                Name = villaDto.Name,
-                Occupancy = villaDto.Occupancy,
-                Rate = villaDto.Rate,
-                Sqft = villaDto.Sqft
-            };
+            Villa model = _mapper.Map<Villa>(villaDto);
+           
             _db.Villas.Update(model);
            await _db.SaveChangesAsync();
             if (!ModelState.IsValid)
