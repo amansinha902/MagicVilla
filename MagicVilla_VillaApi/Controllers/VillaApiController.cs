@@ -2,7 +2,9 @@
 using MagicVilla_VillaApi.Dto;
 using MagicVilla_VillaApi.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace MagicVilla_VillaApi.Controllers
 {
@@ -108,7 +110,7 @@ namespace MagicVilla_VillaApi.Controllers
             return NoContent();
         }
         [HttpPut("{id:int}",Name ="UpdateVilla")] //Updating record in db.
-        [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in delete.
+        [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult UpdateVilla(int id , [FromBody] VillaDto villaDto)
         {
@@ -135,6 +137,56 @@ namespace MagicVilla_VillaApi.Controllers
 
             return NoContent();
         }
+
+        [HttpPatch("{id:int}",Name = "UpdatePartialVilla")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update..
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaDto> patchDTO)
+        {
+            if (patchDTO == null || id == 0)
+            {
+                return BadRequest();
+            }
+
+            var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
+
+            VillaDto villaDto = new() // since we are updating from dto to model.
+            {
+                Amenity = villa.Amenity,
+                Details = villa.Details,
+                Id = villa.Id,
+                ImageUrl = villa.ImageUrl,
+                Name = villa.Name,
+                Occupancy = villa.Occupancy,
+                Rate = villa.Rate,
+                Sqft = villa.Sqft
+            };
+
+            if(villa == null)
+            {
+                return BadRequest();
+            }
+            patchDTO.ApplyTo(villaDto,ModelState);
+            Villa model = new() //converting back.
+            {
+                Amenity = villaDto.Amenity,
+                Details = villaDto.Details,
+                Id = villaDto.Id,
+                ImageUrl = villaDto.ImageUrl,
+                Name = villaDto.Name,
+                Occupancy = villaDto.Occupancy,
+                Rate = villaDto.Rate,
+                Sqft = villaDto.Sqft
+            };
+            _db.Villas.Update(model);
+            _db.SaveChanges();
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            return NoContent();
+        }
+
 
     }
 }
