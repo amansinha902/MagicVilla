@@ -13,7 +13,7 @@ namespace MagicVilla_VillaApi.Data
         public DbSet <Villa> Villas { get; set; } //It denotes table name in database.
 
         //Seeding Database with data..here we enter data it will directly goto table.
-
+        public DbSet <VillaNumber> VillaNumbers { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Villa>().HasData(
