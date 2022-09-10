@@ -19,11 +19,13 @@ namespace MagicVilla_VillaApi.Controllers
         private readonly IVillaNumberRepository _dbVillaNumber; //Dependecy Injection field.
         private readonly IMapper _mapper;
         protected ApiResponse _response;
-        public VillaNumberApiController(IVillaNumberRepository dbVillaNumber, IMapper mapper) //Constructor Injection to use DbContext.
+        private readonly IVillaRepository _dbvilla;
+        public VillaNumberApiController(IVillaRepository dbvilla,IVillaNumberRepository dbVillaNumber, IMapper mapper) //Constructor Injection to use DbContext.
         {
             _dbVillaNumber = dbVillaNumber;
             _mapper = mapper;
             this._response = new();
+            _dbvilla=dbvilla;
         }
         [HttpGet] //getting data form db. 
         [ProducesResponseType(StatusCodes.Status200OK)] // this is response type of api
@@ -88,6 +90,11 @@ namespace MagicVilla_VillaApi.Controllers
                 if (await _dbVillaNumber.GetAsync(u => u.VillaNo == villaNumberCreateDto.VillaNo) != null)
                 {
                     ModelState.AddModelError("CustomError", "Villa Number already exist!");
+                    return BadRequest(ModelState);
+                }
+                if(await _dbvilla.GetAsync(u => u.Id == villaNumberCreateDto.VillaID) == null)
+                {
+                    ModelState.AddModelError("CustomError", "Villa Id is invlaid!");
                     return BadRequest(ModelState);
                 }
 
@@ -158,9 +165,11 @@ namespace MagicVilla_VillaApi.Controllers
                 {
                     return BadRequest();
                 }
-              //  var villa = await _dbVillaNumber.GetAsync(u => u.VillaNo == villaNumberUpdateDto.VillaNo, tracked: false);
-                //villa.Name = villaDto.Name; // we have to convert if not using ef core.
-                //need to manuallt convert villadto -> villa model -- 
+                if (await _dbvilla.GetAsync(u => u.Id == villaNumberUpdateDto.VillaID) == null)
+                {
+                    ModelState.AddModelError("CustomError", "Villa Id is invlaid!");
+                    return BadRequest(ModelState);
+                }
                 VillaNumber model = _mapper.Map<VillaNumber>(villaNumberUpdateDto);
 
                 await _dbVillaNumber.UpdateAsync(model);
