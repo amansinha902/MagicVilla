@@ -2,6 +2,7 @@
 using MagicVilla_VillaApi.Data;
 using MagicVilla_VillaApi.Dto;
 using MagicVilla_VillaApi.Models;
+using MagicVilla_VillaApi.Repository.IRepository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -14,19 +15,20 @@ namespace MagicVilla_VillaApi.Controllers
     [ApiController]
     public class VillaApiController : ControllerBase
     { 
-        private readonly ApplicationDbContext _db; //Dependecy Injection field.
+        private readonly IVillaRepository _dbVilla; //Dependecy Injection field.
         private readonly IMapper _mapper;
-
-        public VillaApiController(ApplicationDbContext db, IMapper mapper) //Constructor Injection to use DbContext.
+        protected ApiResponse _response;
+        public VillaApiController(IVillaRepository dbVilla, IMapper mapper) //Constructor Injection to use DbContext.
         {
-           _db = db;
-           _mapper = mapper;
+            _dbVilla = dbVilla;
+            _mapper = mapper;
+            this._response = new ();
         }
         [HttpGet] //getting data form db. 
         [ProducesResponseType(StatusCodes.Status200OK)] // this is response type of api
         public async Task<ActionResult<IEnumerable<VillaDto>>>GetVillas()  //asyn await recommended way to use in API by microsoft.
         {
-            IEnumerable<Villa> villaList = await _db.Villas.ToListAsync();
+            IEnumerable<Villa> villaList = await _dbVilla.GetAllAsync();
             return Ok(_mapper.Map<List<VillaDto>>(villaList));
         }
         [HttpGet("{id:int}", Name="GetVilla")] //here we are specifing that this method accept id as parameter.
@@ -40,7 +42,7 @@ namespace MagicVilla_VillaApi.Controllers
             {
                 return BadRequest();
             }
-            var villa =await _db.Villas.FirstOrDefaultAsync(u =>u.Id == id);
+            var villa =await _dbVilla.GetAsync(u =>u.Id == id);
             if(villa == null)
             {
                 return NotFound();
@@ -57,7 +59,7 @@ namespace MagicVilla_VillaApi.Controllers
 
         public async Task<ActionResult<VillaDto>> CreateVilla([FromBody] VillaCreateDto villaDto)
         {
-            if(await _db.Villas.FirstOrDefaultAsync(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
+            if(await _dbVilla.GetAsync(u => u.Name.ToLower() == villaDto.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomError", "Villa already exist!");
                 return BadRequest(ModelState);
@@ -84,9 +86,7 @@ namespace MagicVilla_VillaApi.Controllers
 
             //Add changes to villa model using ef core ADD METHOD.
 
-           await _db.Villas.AddAsync(model);
-           await  _db.SaveChangesAsync();
-
+           await _dbVilla.CreateAsync(model);
             return CreatedAtRoute("GetVilla", new { id = model.Id }, model);
         }
 
@@ -101,14 +101,13 @@ namespace MagicVilla_VillaApi.Controllers
             {
                 return BadRequest();
             }
-            var villa = await _db.Villas.FirstOrDefaultAsync(u => u.Id == id);
+            var villa = await _dbVilla.GetAsync(u => u.Id == id);
             if(villa == null)
             {
                 return BadRequest();
             }
-             _db.Villas.Remove(villa);
-           await  _db.SaveChangesAsync();
-            return NoContent();
+           await _dbVilla.RemoveAsync(villa);
+           return NoContent();
         }
         [HttpPut("{id:int}",Name ="UpdateVilla")] //Updating record in db.
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in Update.
@@ -119,13 +118,12 @@ namespace MagicVilla_VillaApi.Controllers
             {
                 return BadRequest();
             }
-            var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
+            var villa = await _dbVilla.GetAsync(u => u.Id == id, tracked: false);
             //villa.Name = villaDto.Name; // we have to convert if not using ef core.
             //need to manuallt convert villadto -> villa model -- 
             Villa model = _mapper.Map<Villa>(villaDto);
            
-            _db.Villas.Update(model);
-            await _db.SaveChangesAsync();
+            await _dbVilla.UpdateAsync(model);  
 
             return NoContent();
         }
@@ -140,7 +138,7 @@ namespace MagicVilla_VillaApi.Controllers
                 return BadRequest();
             }
 
-            var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id); // AsNoTracking this tells efcore not to track the id.
+            var villa = await _dbVilla.GetAsync(u => u.Id == id,tracked:false); // AsNoTracking this tells efcore not to track the id.
             VillaUpdateDto villaDto = _mapper.Map<VillaUpdateDto>(villa);
            
 
@@ -150,9 +148,8 @@ namespace MagicVilla_VillaApi.Controllers
             }
             patchDTO.ApplyTo(villaDto,ModelState);
             Villa model = _mapper.Map<Villa>(villaDto);
-           
-            _db.Villas.Update(model);
-           await _db.SaveChangesAsync();
+
+            await _dbVilla.UpdateAsync(model);
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);

@@ -1,5 +1,7 @@
 using MagicVilla_VillaApi;
 using MagicVilla_VillaApi.Data;
+using MagicVilla_VillaApi.Repository;
+using MagicVilla_VillaApi.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddScoped<IVillaRepository, VillaRepository>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
