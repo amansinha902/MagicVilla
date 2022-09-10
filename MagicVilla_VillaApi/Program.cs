@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddScoped<IVillaRepository, VillaRepository>();
+builder.Services.AddScoped<IVillaNumberRepository, VillaNumberRepository>();    
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
