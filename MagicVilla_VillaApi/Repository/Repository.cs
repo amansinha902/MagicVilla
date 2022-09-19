@@ -1,12 +1,11 @@
 ﻿using MagicVilla_VillaApi.Data;
-using MagicVilla_VillaApi.Models;
 using MagicVilla_VillaApi.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace MagicVilla_VillaApi.Repository
 {
-    public class Repository<T> : IRepository<T> where T: class
+    public class Repository<T> : IRepository<T> where T : class
     {
         private readonly ApplicationDbContext _db;
         internal DbSet<T> dbset; //generic dbset where T can changed...
@@ -25,7 +24,7 @@ namespace MagicVilla_VillaApi.Repository
 
         }
 
-        public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>> ? filter = null)
+        public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null)
         {
             IQueryable<T> query = dbset; //Iqueryable is used to query sql data.
             if (filter != null)
@@ -60,6 +59,6 @@ namespace MagicVilla_VillaApi.Repository
             await _db.SaveChangesAsync();
         }
 
-       
+
     }
 }

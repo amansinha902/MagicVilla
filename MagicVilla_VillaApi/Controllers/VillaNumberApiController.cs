@@ -1,12 +1,8 @@
 ﻿using AutoMapper;
-using MagicVilla_VillaApi.Data;
 using MagicVilla_VillaApi.Dto;
 using MagicVilla_VillaApi.Models;
 using MagicVilla_VillaApi.Repository.IRepository;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
 
 namespace MagicVilla_VillaApi.Controllers
@@ -20,12 +16,12 @@ namespace MagicVilla_VillaApi.Controllers
         private readonly IMapper _mapper;
         protected ApiResponse _response;
         private readonly IVillaRepository _dbvilla;
-        public VillaNumberApiController(IVillaRepository dbvilla,IVillaNumberRepository dbVillaNumber, IMapper mapper) //Constructor Injection to use DbContext.
+        public VillaNumberApiController(IVillaRepository dbvilla, IVillaNumberRepository dbVillaNumber, IMapper mapper) //Constructor Injection to use DbContext.
         {
             _dbVillaNumber = dbVillaNumber;
             _mapper = mapper;
             this._response = new();
-            _dbvilla=dbvilla;
+            _dbvilla = dbvilla;
         }
         [HttpGet] //getting data form db. 
         [ProducesResponseType(StatusCodes.Status200OK)] // this is response type of api
@@ -92,7 +88,7 @@ namespace MagicVilla_VillaApi.Controllers
                     ModelState.AddModelError("CustomError", "Villa Number already exist!");
                     return BadRequest(ModelState);
                 }
-                if(await _dbvilla.GetAsync(u => u.Id == villaNumberCreateDto.VillaID) == null)
+                if (await _dbvilla.GetAsync(u => u.Id == villaNumberCreateDto.VillaID) == null)
                 {
                     ModelState.AddModelError("CustomError", "Villa Id is invlaid!");
                     return BadRequest(ModelState);
@@ -105,8 +101,8 @@ namespace MagicVilla_VillaApi.Controllers
 
 
                 //need to manuallt convert villadto -> villa model 
-                VillaNumber model = _mapper.Map<VillaNumber>(villaNumberCreateDto); 
-                               
+                VillaNumber model = _mapper.Map<VillaNumber>(villaNumberCreateDto);
+
 
                 await _dbVillaNumber.CreateAsync(model);
 
@@ -126,7 +122,7 @@ namespace MagicVilla_VillaApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in delete.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        
+
         public async Task<ActionResult<ApiResponse>> DeleteVillaNumber(int id) // here using IActionResult because we are not returning anything.
         {
             try
@@ -185,7 +181,7 @@ namespace MagicVilla_VillaApi.Controllers
             return _response;
         }
 
- 
+
 
 
     }

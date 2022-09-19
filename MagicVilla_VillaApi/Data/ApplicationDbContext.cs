@@ -1,19 +1,18 @@
 ﻿using MagicVilla_VillaApi.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace MagicVilla_VillaApi.Data
 {
     public class ApplicationDbContext : DbContext
-    {   
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options): base(options)
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
             //Madatory Step in order to use Ef core.
         }
-        public DbSet <Villa> Villas { get; set; } //It denotes table name in database.
+        public DbSet<Villa> Villas { get; set; } //It denotes table name in database.
 
         //Seeding Database with data..here we enter data it will directly goto table.
-        public DbSet <VillaNumber> VillaNumbers { get; set; }
+        public DbSet<VillaNumber> VillaNumbers { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Villa>().HasData(
@@ -77,7 +76,7 @@ namespace MagicVilla_VillaApi.Data
                   Amenity = "",
                   CreatedDate = DateTime.Now
               });
-               
+
         }
 
     }
