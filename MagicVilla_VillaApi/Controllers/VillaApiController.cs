@@ -125,7 +125,7 @@ namespace MagicVilla_VillaApi.Controllers
             return _response;
         }
 
-        [HttpDelete] //Deleting record in db.
+        [HttpDelete("{id:int}",Name = "DeleteVilla")] //Deleting record in db.
         [ProducesResponseType(StatusCodes.Status204NoContent)] //by default we return no content in delete.
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
